@@ -4,14 +4,14 @@ using ArchiSteamFarm.Core;
 using ArchiSteamFarm.Plugins.Interfaces;
 using JetBrains.Annotations;
 
-namespace MyAwesomePlugin;
+namespace CommandAliasPlugin;
 
 #pragma warning disable CA1812 // ASF uses this class during runtime
 [UsedImplicitly]
-internal sealed class MyAwesomePlugin : IGitHubPluginUpdates {
-	public string Name => nameof(MyAwesomePlugin);
-	public string RepositoryName => "JustArchiNET/ASF-PluginTemplate";
-	public Version Version => typeof(MyAwesomePlugin).Assembly.GetName().Version ?? throw new InvalidOperationException(nameof(Version));
+internal sealed class CommandAliasPlugin : IGitHubPluginUpdates {
+	public string Name => nameof(CommandAliasPlugin);
+	public string RepositoryName => "Rudokhvist/CommandAliasPlugin";
+	public Version Version => typeof(CommandAliasPlugin).Assembly.GetName().Version ?? throw new InvalidOperationException(nameof(Version));
 
 	public Task OnLoaded() {
 		ASF.ArchiLogger.LogGenericInfo($"Hello {Name}!");
