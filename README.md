@@ -7,6 +7,11 @@ This plugins allows you to setup custom command aliases for ASF commands and eve
 It's not very straightforward in configuration, but very flexible and versatile, so if you'll manage to configure it - your efforts will be well rewarded.
 Read carefully this readme, and don't worry if you don't understand it from the first time - there are examples below, hopefully they will help you a bit!
 
+## Installation
+
+Work of this plugin is only guaranteed with [generic ASF variant](https://github.com/JustArchiNET/ArchiSteamFarm/wiki/Setting-up#generic-setup), so if you use any other variant please first switch to generic.
+After that, download `CommandAliasPlugin.zip` from [latest release page](https://github.com/Rudokhvist/CommandAliasPlugin/releases/latest), and unpack it (including contained folder!) to the `plugins` folder of your asf installation.
+And then you have to configure aliases you want in `ASF.json` file in `config` folder of your ASF installation, as described below. If your ASF is configured to not restart after global config edits - restart it manually, and if you did everything right - your aliases should work now.
 
 
 ## Configuration
