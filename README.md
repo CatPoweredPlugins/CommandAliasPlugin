@@ -1,93 +1,133 @@
-# ASF-PluginTemplate
 
-[![GitHub sponsor](https://img.shields.io/badge/GitHub-sponsor-ea4aaa.svg?logo=github-sponsors)](https://github.com/sponsors/JustArchi)
-[![Crypto donate](https://img.shields.io/badge/Crypto-donate-f7931a.svg?logo=bitcoin)](https://commerce.coinbase.com/checkout/0c23b844-c51b-45f4-9135-8db7c6fcf98e)
-[![PayPal.me donate](https://img.shields.io/badge/PayPal.me-donate-00457c.svg?logo=paypal)](https://paypal.me/JustArchi)
-[![PayPal donate](https://img.shields.io/badge/PayPal-donate-00457c.svg?logo=paypal)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HD2P2P3WGS5Y4)
-[![Revolut donate](https://img.shields.io/badge/Revolut-donate-0075eb.svg?logo=revolut)](https://pay.revolut.com/justarchi)
-[![Steam donate](https://img.shields.io/badge/Steam-donate-000000.svg?logo=steam)](https://steamcommunity.com/tradeoffer/new/?partner=46697991&token=0ix2Ruv_)
-
----
-
-[![Repobeats analytics image](https://repobeats.axiom.co/api/embed/4aa3ac833c7593826ac47ccfdc49c46ae27abb3d.svg "Repobeats analytics image")](https://github.com/JustArchiNET/ASF-PluginTemplate/pulse)
-
----
+# Command Alias Plugin
 
 ## Description
 
-ASF-PluginTemplate is a template repository that you can use for creating custom **[plugins](https://github.com/JustArchiNET/ArchiSteamFarm/wiki/Plugins)** for **[ArchiSteamFarm](https://github.com/JustArchiNET/ArchiSteamFarm)**. This template has everything needed to kickstart the structure of your custom ASF plugin. Most importantly, from viewpoint of a project not related to ASF whatsoever while making use of its best practices.
+This plugins allows you to setup custom command aliases for ASF commands and even groups of commands.
+It's not very straightforward in configuration, but very flexible and versatile, so if you'll manage to configure it - your efforts will be well rewarded.
+Read carefully this readme, and don't worry if you don't understand it from the first time - there are examples below, hopefully they will help you a bit!
 
----
 
-## How to use this template
 
-Simply click the "Use this template" button in the top-right of the **[main repository page](https://github.com/JustArchiNET/ASF-PluginTemplate)** in order to get started.
+## Configuration
+This plugin adds one parameter of complex structure to global config parameters (file ASF.json). This parameter should contain array of objects to define your aliases.
+General structure of this parameter looks like this:
 
-For cloning your git repository, use `git clone --recursive` option in order to pull ASF reference along with your plugin, which you'll require during compilation. See **[git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules)** for more info.
 
-After using the template and cloning git repo, assuming you have everything required as specified in **[compilation](https://github.com/JustArchiNET/ArchiSteamFarm/wiki/Compilation)** page on our wiki, try to build your project with `dotnet build MyAwesomePlugin`, it should succeed without any issues, which means you're all set.
+```
+ "Aliases" : [
+	{
+           "Alias":"string",
+           "ParamNumber": byte,
+           "Access": "string",
+           "Commands": [
+              "string", "string", "string", ,,,
+           ],
+           "AllResponses": bool
+        },
+        ...
+ ]
+```
 
-In theory, you don't need to do anything special further, just edit **[`MyAwesomePlugin/MyAwesomePlugin.cs`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/MyAwesomePlugin/MyAwesomePlugin.cs)** file and get going with your plugin logic. However, there are some things we recommend on doing in addition to above steps, and some we highlight as a possibility in case you'd be interested in them. It's now up to you what you want to do next.
+Let's walk through all fields here. `Aliases` is additional parameter you add, it's and array of objects, where each object describes one alias.
+You may need to set two or more objects for one alias command, if you want it to be flexible as regular ASF commands in regard to number of parameters, but in most simple case of alias without parameters only one object will be enough.
 
----
+`Alias` is required parameter of type `string`, representing your new command. You don't need to add standart ASF prefix here ("!" by default), just the command itself.
 
-## What's included
+`ParamNumber` is a required parameter of type `byte` that sets what number of parameter you want your new command to have. Please be aware, that for example "list of bots" is still one parameter. Read [ASF wiki](https://github.com/JustArchiNET/ArchiSteamFarm/wiki/Commands) to get better idea what is considered one parameter in terms of ASF. Also, please be aware that if you will use your command with more parameters than specified here, all extra parameters will be concatenated and considered part of last parameter (same as with list parameters of regular asf commands).
 
-- Sample `MyAwesomePlugin` ASF plugin project with `ArchiSteamFarm` reference in git subtree.
-- Project structure supporting `IGitHubPluginUpdates` ASF interface, allowing for convenient plugin updates.
-- Seamless hook into the ASF build process, which simplifies the project structure, as you effectively inherit the default settings official ASF projects are built with. Of course, free to override.
-- GitHub actions CI script, which verifies whether your project is possible to build. You can easily enhance it with unit tests when/if you'll have any.
-- GitHub actions publish script, heavily inspired by ASF build process. Publish script allows you to `git tag` and `git push` selected tag, while CI will build, pack, create release on GitHub and upload the resulting artifacts, automatically.
-- GitHub actions ASF reference update script, which by default runs every day and ensures that your git submodule is tracking latest ASF (stable) release. Please note that this is a reference update only, the actual commit your plugin is built against is developer's responsibility not covered by this action, as it requires actual testing and verification. Because of that, commit created through this workflow can't possibly create any kind of build regression, it's a helper for you to more easily track latest ASF stable release.
-- Configuration file for **[Renovate](https://github.com/renovatebot/renovate)** bot, which you can optionally decide to use. Using renovate, apart from bumping your library dependencies, can also cover bumping ASF commit that your plugin is built against, which together with above workflow will ensure that you're effectively tracking latest ASF (stable) release.
-- Code style that matches the one we use at ASF, feel free to modify it to suit you.
-- Other misc files for integration with `git` and GitHub.
+`Access` is optional parameter of type `string` that sets access right the user must have to use your alias. It should be one of following values, [defined in ASF](https://github.com/JustArchiNET/ArchiSteamFarm/wiki/Configuration#steamuserpermissions):
+```
+	None
+	FamilySharing
+	Operator
+	Master
+	Owner
+```
+If this parameter is not specified, or the specified string does not match any of access right above, `Master` will be used by default. Please note, that access rights of commands that your alias will actually execute does not matter, and only the access rights specified here will be required. That allows, in particular, to create alias for some ASF command that can be run only by `Owner` with rights `None`, allowing **EVERYONE** to execute this command. Be extremely careful with this parameter, and unless you know what you're doing - never specify it explicitly and let plugin use the default value!
+   
+`Commands` is a required parameter of type `Array of strings` that will define, what the command(s) will be actually run instead of your alias. Each string should contain one asf command and optionally - up to `ParamNumber` placeholders for parameters, in format `command %1 %2 %3`. Each placeholder will be replaced with actual parameter specified with your alias command, according to number. So, if you have two commands, one of which needs 3 parameters, and other only second one, your commands field will look like `["command1 %1 %2 %3", "command2 %2"]`. If, for example, you need to run two command, with different parameters, you can specify `"ParamNumber":2` and `"Commands":["command1 %1","command2 %2]` and you're done! Please note, that if you will use placeholder with number bigger than `ParamNumber`, it won't be replaced and your plugin won't work as intended.
+You can use regular ASF commands here, commands from other plugins (even from multiple different plugins in one alias), and even other aliases.
 
----
+Apart from that, you can use special pseudo-command `wait` with parameter of type `int` to set delay in milliseconds between commands, if needed. You can also use placeholders for this pseudo-command to provide delay time as parameter for your alias.
 
-## Recommended steps
+`AllResponses` is optional parameter of type `bool`, that will define whether you want to get responses of all your commands, or no. In the latter case you will only get message "Done" when all your commans executed, disregard of their success or failure. Default value is `false`, so if you want to see response of your commands, be sure to explicitly specify it as `"AllResponses":true`
 
-Here we list steps that are **not mandatory**, but worthy to consider after using this repo as a template. While we'd recommend to cover all of those, it's totally alright if you don't. We ordered those according to our recommended priority.
 
-- If you want to use automatic plugin updates, ensure **[`RepositoryName`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/MyAwesomePlugin/MyAwesomePlugin.cs#L13)** property matches your target repo, this is covered by default in our **[`rename.sh`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/tools/rename.sh)** script. If you want to opt out of that feature, replace **[`IGitHubPluginUpdates`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/MyAwesomePlugin/MyAwesomePlugin.cs#L11)** interface back to its base `IPlugin` one, and remove **[`RepositoryName`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/MyAwesomePlugin/MyAwesomePlugin.cs#L13)** property instead.
-- Choose license based on which you want to share your work. If you'd like to use the same one we do, so Apache 2.0, then you don't need to do anything as the plugin template comes with it. If you'd like to use different one, remove **[`LICENSE.txt`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/LICENSE.txt)** file and provide your own. If you've decided to use different license, it's probably also a good idea to update `PackageLicenseExpression` in **[`Directory.Build.props`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/Directory.Build.props#L17)**.
-- Change this **[`README.md`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/README.md)** in any way you want to. You can check **[ASF's README](https://github.com/JustArchiNET/ArchiSteamFarm/blob/main/README.md)** for some inspiration. We recommend at least a short description of what your plugin can do. Updating `<Description>` in **[`Directory.Build.props`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/Directory.Build.props#L15)** also sounds like a good idea.
-- Fill **[`SUPPORT.md`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/.github/SUPPORT.md)** file, so your users can learn where they can ask for help in regards to your plugin.
-- Fill **[`SECURITY.md`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/.github/SECURITY.md)** file, so your users can learn where they should report critical security issues in regards to your plugin.
-- If you want to use **[Renovate bot](https://github.com/renovatebot/renovate)** like we do, we recommend to modify the `:assignee()` block in our **[`renovate.json5`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/.github/renovate.json5#L5)** config file and putting your own GitHub username there. This will allow Renovate bot to assign failing PR to you so you can take a look at it. Everything else can stay as it is, unless you want to modify it of course.
-- Provide your own **[`CODE_OF_CONDUCT.md`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/.github/CODE_OF_CONDUCT.md#enforcement)** if you'd like to. If you're fine with ours, you can simply replace `TODO@example.com` e-mail with your own.
-- Provide your own **[`FUNDING.yml`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/.github/FUNDING.yml)** if you'd like to. By default the template comes with the funding available for the main ASF project, which you're free to keep, remove, or replace with your own.
+## Example 1
 
----
+Let's define an alias for command `!loot asf` as `!la`. It's the simples possible thing: we don't need parameters, and we need to run only one command. Configuration for this case will look like this:
+```
+ "Aliases" : [
+	{
+           "Alias":"la",
+           "ParamNumber": 0,
+           "Commands": ["loot asf"],
+           "AllResponses": true
+        }
+ ]
+```
+`Alias` is set to `la` - our alias command, `ParamNumber` is set to 0, since we have no parameters, `Commands` is set to array of one element, a string `loot asf` - that's the command that will be runned instead of our alias, and `AllResponses` is set to `true` so that we cood see actual response. And we don't set `Access` because we're fine with default `Master` one. Easy, huh?
 
-## Worth mentioning
+## Example 2
 
-Here we list things that do not require your immediate attention, but we consider worthy to know.
+Let's define an alias for command `!2faok` that can be run with and without parameters, as `!ok`. Our config will look like this:
 
-### Compilation
+```
+ "Aliases" : [
+	{
+           "Alias":"ok",
+           "ParamNumber": 0,
+           "Commands": ["2faok"],
+           "AllResponses": true
+        },
+	{
+           "Alias":"ok",
+           "ParamNumber": 1,
+           "Commands": ["2faok %1"],
+           "AllResponses": true
+        }
 
-Simply execute `dotnet build MyAwesomePlugin` and find your binaries in `MyAwesomePlugin/bin` folder, which you can drag to ASF's `plugins` folder. Keep in mind however that your plugin build created this way is based on existence of your .NET SDK and might not work on other machines or other SDK versions - for creating actual package with your plugin use `dotnet publish MyAwesomePlugin -c Release -o out` command instead, which will create a more general, packaged version in `out` directory. Likewise, use `-c Debug` if for some reason you'd like more general `Debug` build instead.
+ ]
+```
 
-### Library references
+Ok, that's a bit more complex. We want command to take a list of bots, but want it to be optional (so that if you message it directly to some bot - it will work for this bot without explicitly specifying it's name, same as original `!2faok` works).
+So, we need two object with same `Alias` of `"ok"` (alias that we want to use), but with different `ParamNumber` - one with 0 and one with 1 (because list of bots is still one parameter).
+In both cases we want to see actual response of command, so we set `AllResponses` to true, and we are fine with `Master` access rights, so we don't specify `Access` in both cases.
+In object with `"ParamNumber": 0` we set `Commands` to just `["2faok"]`, since we don't need any parameters here.
+But in object with `"ParamNumber": 1` we need to use a placeholder, so value for `Commands` will be `["2faok %1"]`. This way, whatever we put after our alias `ok` will be set after actual command `2faok`.
 
-Our plugin template uses centrally-managed packages. Simply add a `PackageVersion` reference below our `Import` clause in **[`Directory.Packages.props`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/Directory.Packages.props#L2)**. Afterwards add a `PackageReference` to your **[`MyAwesomePlugin.csproj`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/MyAwesomePlugin/MyAwesomePlugin.csproj#L6-L10)** as usual, but without specifying a version (which we've just specified in `Directory.Packages.props` instead).
+## Example 3
 
-Using centrally-managed NuGet packages is crucial in regards to integration with library versions used in the ASF submodule, especially the `System.Composition.AttributedModel` which your plugin should always have in the ASF matching version. This also means that you don't have to (and actually shouldn't) specify versions for all of the libraries that ASF defines on its own in **[`Directory.Packages.props`](https://github.com/JustArchiNET/ArchiSteamFarm/blob/main/Directory.Packages.props)** (that you conveniently inherit from).
+Let's define an alias named `rc` (short for "reconnect"), that will work with a list of bots or without a parameter, that will `stop` bot, and then `start` bot again. Let's look at config:
+```
+ "Aliases" : [
+	{
+           "Alias":"rc",
+           "ParamNumber": 0,
+           "Commands": [
+             "stop",
+             "wait 500",
+             "start",
+             "wait 10000"
+           ],
+        },
+	{
+           "Alias":"rc",
+           "ParamNumber": 1,
+           "Commands": [
+             "stop %1",
+             "wait 500",
+             "start %1,
+             "wait 10000"
+           ],
+        }
 
-### Renaming `MyAwesomePlugin`
+ ]
+```
 
-You might be interested in renaming `MyAwesomePlugin` project into the one that suits your plugin. For doing that, we recommend using our intuitive **[`tools/rename.sh`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/tools/rename.sh)** script, which you can call using your favourite POSIX sh compliant shell. It's also compatible with WSL.
+Same as abowe, we need two objects. We're okay with default access of `Master`, so we don't specify `Access`, and we don't care about bot response, so we don't specify `AllResponses` too.
+Same as with [example 2](#example-2) above, for alias with parameters we specify a placeholder in commands, and for alias without parameters - we don't.
+We need to run two consequtive commands, so we should put to `Commands` array of two strings, with "stop" and "start" commands accordingly. But apart from that, we add a pseudo-command `wait 500` between stop and start, to make sure that bot has time to properly stop before we attemt to start it again, and commad `wait 10000` to wait 10 seconds after start before reporting "Done!", since bot start can take a lot of time.
 
-If for any reason you'd prefer to rename manually, we've tried to keep the minimum amount of references, and we're listing here all of the places you should keep in mind:
-- **[`MyAwesomePlugin.csproj`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/MyAwesomePlugin/MyAwesomePlugin.csproj)**, renaming should be enough.
-- **[`MyAwesomePlugin.cs`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/MyAwesomePlugin/MyAwesomePlugin.cs#L7-L14)**, rename along with `RepositoryName` property, `MyAwesomePlugin` class name and included references to it.
-- **[`MyAwesomePlugin`](https://github.com/JustArchiNET/ASF-PluginTemplate/tree/main/MyAwesomePlugin)** directory, which holds above files.
-- **[`MyAwesomePlugin.sln`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/MyAwesomePlugin.sln#L6)**, along with the update of `MyAwesomePlugin` reference in the `sln` file.
-- **[`MyAwesomePlugin.sln.DotSettings`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/MyAwesomePlugin.sln.DotSettings)**, renaming to match the `sln` file above should be enough.
-- **[`Directory.Build.props`](https://github.com/JustArchiNET/ASF-PluginTemplate/blob/main/Directory.Build.props#L5)**, in particular `<PluginName>MyAwesomePlugin</PluginName>` line.
-
-Nothing else should be required to the best of our knowledge.
-
-### Need help?
-
-Feel free to ask in one of our **[support channels](https://github.com/JustArchiNET/ArchiSteamFarm/blob/main/.github/SUPPORT.md)**, where we'll be happy to offer you a helpful hand 😎.
+# GOOD LUCK!
