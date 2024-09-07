@@ -10,6 +10,13 @@ using ArchiSteamFarm.Steam;
 using ArchiSteamFarm.Localization;
 using JetBrains.Annotations;
 using System.Globalization;
+using ArchiSteamFarm.Web.GitHub.Data;
+using ArchiSteamFarm.Steam.Data;
+using System.Collections.ObjectModel;
+using ArchiSteamFarm;
+using System.Reflection;
+using ArchiSteamFarm.NLog;
+using static System.Collections.Specialized.BitVector32;
 
 namespace CommandAliasPlugin;
 
@@ -22,6 +29,27 @@ internal sealed class CommandAliasPlugin : IGitHubPluginUpdates, IBotCommand2, I
 
 	internal static List<Alias>? Aliases;
 
+	public Task<ReleaseAsset?> GetTargetReleaseAsset(Version asfVersion, string asfVariant, Version newPluginVersion, IReadOnlyCollection<ReleaseAsset> releaseAssets) {
+		ArgumentNullException.ThrowIfNull(asfVersion);
+		ArgumentException.ThrowIfNullOrEmpty(asfVariant);
+		ArgumentNullException.ThrowIfNull(newPluginVersion);
+
+		if ((releaseAssets == null) || (releaseAssets.Count == 0)) {
+			throw new ArgumentNullException(nameof(releaseAssets));
+		}
+
+		Collection<ReleaseAsset?> matches = [.. releaseAssets.Where(r => r.Name.Equals(Name + ".zip", StringComparison.OrdinalIgnoreCase))];
+
+		if (matches.Count != 1) {
+			return Task.FromResult((ReleaseAsset?) null);
+		}
+
+		ReleaseAsset? release = matches[0];
+
+		return (Version.Major == newPluginVersion.Major && Version.Minor == newPluginVersion.Minor && Version.Build == newPluginVersion.Build) || asfVersion != Assembly.GetExecutingAssembly().GetName().Version
+			? Task.FromResult(release)
+			: Task.FromResult((ReleaseAsset?) null);
+	}
 	public Task OnASFInit(IReadOnlyDictionary<string, JsonElement>? additionalConfigProperties = null) {
 		if (additionalConfigProperties == null) {
 			return Task.CompletedTask;
@@ -68,22 +96,28 @@ internal sealed class CommandAliasPlugin : IGitHubPluginUpdates, IBotCommand2, I
 		}
 		string result = "";
 
+
 		foreach (string commandFormat in alias.Commands) {
-			string command = commandFormat;
-			for (int i = 1; i < alias.ParamNumber; i++) {
-				command = command.Replace($"%{i}", args[i], StringComparison.OrdinalIgnoreCase);
-			}
-			command = command.Replace($"%{alias.ParamNumber}", Utilities.GetArgsAsText(message, alias.ParamNumber), StringComparison.OrdinalIgnoreCase);
-			if (command.Split(" ")[0].Equals("wait", StringComparison.OrdinalIgnoreCase)) {
-				if (int.TryParse(command.Split(" ")?.ElementAt(1), out int waitmsec)) {
-					await Task.Delay(waitmsec).ConfigureAwait(false);
+			try {
+				string command = string.Format(CultureInfo.CurrentCulture, commandFormat, [.. args[1..alias.ParamNumber], Utilities.GetArgsAsText(message, alias.ParamNumber)]);
+				switch (command.Split(" ")[0].ToUpper(CultureInfo.CurrentCulture)) { //just in case of future increase of meta-commands
+					case "wait":
+						if (int.TryParse(command.Split(" ")?.ElementAt(1), out int waitmsec)) {
+							await Task.Delay(waitmsec).ConfigureAwait(false);
+						}
+						break;
+					default:
+						result += await bot.Commands.Response(EAccess.Owner, command, steamID).ConfigureAwait(false) + Environment.NewLine;
+						break;
 				}
-			} else {
-				result += await bot.Commands.Response(EAccess.Owner, command, steamID).ConfigureAwait(false) + Environment.NewLine;
+			} catch (Exception) {
+				ASF.ArchiLogger.LogGenericError(string.Format(CultureInfo.CurrentCulture, Strings.ErrorIsInvalid, "Aliase configuration"));
+				return string.Format(CultureInfo.CurrentCulture, Strings.ErrorIsInvalid, "Aliase configuration");
 			}
 		}
 
-		return alias.AllResponses ? result : bot.Commands.FormatBotResponse(Strings.Done);
+		return alias.AllResponses ? result : Strings.Done;
+
 
 	}
 
