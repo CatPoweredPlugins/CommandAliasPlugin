@@ -99,7 +99,7 @@ internal sealed class CommandAliasPlugin : IGitHubPluginUpdates, IBotCommand2, I
 
 		foreach (string commandFormat in alias.Commands) {
 			try {
-				string command = string.Format(CultureInfo.CurrentCulture, commandFormat, [.. args[1..alias.ParamNumber], Utilities.GetArgsAsText(message, alias.ParamNumber)]);
+				string command = alias.ParamNumber > 0 ? string.Format(CultureInfo.CurrentCulture, commandFormat, [.. args[1..alias.ParamNumber], Utilities.GetArgsAsText(message, alias.ParamNumber)]) : commandFormat;
 				switch (command.Split(" ")[0].ToUpper(CultureInfo.CurrentCulture)) { //just in case of future increase of meta-commands
 					case "wait":
 						if (int.TryParse(command.Split(" ")?.ElementAt(1), out int waitmsec)) {
@@ -111,8 +111,8 @@ internal sealed class CommandAliasPlugin : IGitHubPluginUpdates, IBotCommand2, I
 						break;
 				}
 			} catch (Exception) {
-				ASF.ArchiLogger.LogGenericError(string.Format(CultureInfo.CurrentCulture, Strings.ErrorIsInvalid, "Aliase configuration"));
-				return string.Format(CultureInfo.CurrentCulture, Strings.ErrorIsInvalid, "Aliase configuration");
+				ASF.ArchiLogger.LogGenericError(string.Format(CultureInfo.CurrentCulture, Strings.ErrorIsInvalid, "Alias configuration"));
+				return string.Format(CultureInfo.CurrentCulture, Strings.ErrorIsInvalid, "Alias configuration");
 			}
 		}
 
