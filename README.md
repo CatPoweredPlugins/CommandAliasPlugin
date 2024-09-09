@@ -51,7 +51,7 @@ You may need to set two or more objects for one alias command, if you want it to
 ```
 If this parameter is not specified, or the specified string does not match any of access right above, `Master` will be used by default. Please note, that access rights of commands that your alias will actually execute does not matter, and only the access rights specified here will be required. That allows, in particular, to create alias for some ASF command that can be run only by `Owner` with rights `None`, allowing **EVERYONE** to execute this command. Be extremely careful with this parameter, and unless you know what you're doing - never specify it explicitly and let plugin use the default value!
    
-`Commands` is a required parameter of type `Array of strings` that will define, what the command(s) will be actually run instead of your alias. Each string should contain one asf command and optionally - up to `ParamNumber` placeholders for parameters, in format `command %1 %2 %3`. Each placeholder will be replaced with actual parameter specified with your alias command, according to number. So, if you have two commands, one of which needs 3 parameters, and other only second one, your commands field will look like `["command1 %1 %2 %3", "command2 %2"]`. If, for example, you need to run two command, with different parameters, you can specify `"ParamNumber":2` and `"Commands":["command1 %1","command2 %2]` and you're done! Please note, that if you will use placeholder with number bigger than `ParamNumber`, it won't be replaced and your plugin won't work as intended.
+`Commands` is a required parameter of type `Array of strings` that will define, what the command(s) will be actually run instead of your alias. Each string should contain one asf command and optionally - up to `ParamNumber` placeholders for parameters, in format `command {0} {1} {2}`. Each placeholder will be replaced with actual parameter specified with your alias command, according to number (starting from 0, so first parameter is {0}). So, if you have two commands, one of which needs 3 parameters, and other only second one, your commands field will look like `["command1 {0} {1} {2}", "command2 {1}"]`. If, for example, you need to run two commands, with different parameters, you can specify `"ParamNumber":2` and `"Commands":["command1 {0}","command2 {1}]` and you're done! Please note, that if you will use placeholder with number bigger than `ParamNumber-1`, it won't work.
 You can use regular ASF commands here, commands from other plugins (even from multiple different plugins in one alias), and even other aliases.
 
 Apart from that, you can use special pseudo-command `wait` with parameter of type `int` to set delay in milliseconds between commands, if needed. You can also use placeholders for this pseudo-command to provide delay time as parameter for your alias.
@@ -89,7 +89,7 @@ Let's define an alias for command `!2faok` that can be run with and without para
 	{
            "Alias":"ok",
            "ParamNumber": 1,
-           "Commands": ["2faok %1"],
+           "Commands": ["2faok {0}"],
            "AllResponses": true
         }
 
@@ -100,7 +100,7 @@ Ok, that's a bit more complex. We want command to take a list of bots, but want 
 So, we need two object with same `Alias` of `"ok"` (alias that we want to use), but with different `ParamNumber` - one with 0 and one with 1 (because list of bots is still one parameter).
 In both cases we want to see actual response of command, so we set `AllResponses` to true, and we are fine with `Master` access rights, so we don't specify `Access` in both cases.
 In object with `"ParamNumber": 0` we set `Commands` to just `["2faok"]`, since we don't need any parameters here.
-But in object with `"ParamNumber": 1` we need to use a placeholder, so value for `Commands` will be `["2faok %1"]`. This way, whatever we put after our alias `ok` will be set after actual command `2faok`.
+But in object with `"ParamNumber": 1` we need to use a placeholder, so value for `Commands` will be `["2faok {0}"]`. This way, whatever we put after our alias `ok` will be set after actual command `2faok`.
 
 ## Example 3
 
@@ -121,9 +121,9 @@ Let's define an alias named `rc` (short for "reconnect"), that will work with a 
            "Alias":"rc",
            "ParamNumber": 1,
            "Commands": [
-             "stop %1",
+             "stop {0}",
              "wait 500",
-             "start %1,
+             "start {0},
              "wait 10000"
            ],
         }
