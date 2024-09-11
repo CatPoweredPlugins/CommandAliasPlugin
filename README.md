@@ -34,7 +34,7 @@ General structure of this parameter looks like this:
  ]
 ```
 
-Let's walk through all fields here. `Aliases` is additional parameter you add, it's and array of objects, where each object describes one alias.
+Let's walk through all fields here. `Aliases` is an additional parameter you add, it's an array of objects, where each object describes one alias.
 You may need to set two or more objects for one alias command, if you want it to be flexible as regular ASF commands in regard to number of parameters, but in most simple case of alias without parameters only one object will be enough.
 
 `Alias` is required parameter of type `string`, representing your new command. You don't need to add standart ASF prefix here ("!" by default), just the command itself.
