@@ -11,12 +11,9 @@ using ArchiSteamFarm.Localization;
 using JetBrains.Annotations;
 using System.Globalization;
 using ArchiSteamFarm.Web.GitHub.Data;
-using ArchiSteamFarm.Steam.Data;
 using System.Collections.ObjectModel;
-using ArchiSteamFarm;
 using System.Reflection;
-using ArchiSteamFarm.NLog;
-using static System.Collections.Specialized.BitVector32;
+using ArchiSteamFarm.Web.GitHub;
 
 namespace CommandAliasPlugin;
 
@@ -24,32 +21,60 @@ namespace CommandAliasPlugin;
 [UsedImplicitly]
 internal sealed class CommandAliasPlugin : IGitHubPluginUpdates, IBotCommand2, IASF {
 	public string Name => nameof(CommandAliasPlugin);
-	public string RepositoryName => "Rudokhvist/CommandAliasPlugin";
+	public string RepositoryName => "CatPoweredPlugins/CommandAliasPlugin";
 	public Version Version => typeof(CommandAliasPlugin).Assembly.GetName().Version ?? throw new InvalidOperationException(nameof(Version));
 
 	internal static List<Alias>? Aliases;
 
-	public Task<ReleaseAsset?> GetTargetReleaseAsset(Version asfVersion, string asfVariant, Version newPluginVersion, IReadOnlyCollection<ReleaseAsset> releaseAssets) {
+	public async Task<Uri?> GetTargetReleaseURL(Version asfVersion, string asfVariant, bool asfUpdate, bool stable, bool forced) {
 		ArgumentNullException.ThrowIfNull(asfVersion);
 		ArgumentException.ThrowIfNullOrEmpty(asfVariant);
-		ArgumentNullException.ThrowIfNull(newPluginVersion);
 
-		if ((releaseAssets == null) || (releaseAssets.Count == 0)) {
-			throw new ArgumentNullException(nameof(releaseAssets));
+		if (string.IsNullOrEmpty(RepositoryName)) {
+			ASF.ArchiLogger.LogGenericError(string.Format(CultureInfo.CurrentCulture, Strings.WarningFailedWithError, (nameof(RepositoryName))));
+
+			return null;
 		}
 
-		Collection<ReleaseAsset?> matches = [.. releaseAssets.Where(r => r.Name.Equals(Name + ".zip", StringComparison.OrdinalIgnoreCase))];
+		ReleaseResponse? releaseResponse = await GitHubService.GetLatestRelease(RepositoryName, stable).ConfigureAwait(false);
 
-		if (matches.Count != 1) {
-			return Task.FromResult((ReleaseAsset?) null);
+		if (releaseResponse == null) {
+			return null;
 		}
 
-		ReleaseAsset? release = matches[0];
+		Version newVersion = new(releaseResponse.Tag);
 
-		return (Version.Major == newPluginVersion.Major && Version.Minor == newPluginVersion.Minor && Version.Build == newPluginVersion.Build) || asfVersion != Assembly.GetExecutingAssembly().GetName().Version
-			? Task.FromResult(release)
-			: Task.FromResult((ReleaseAsset?) null);
+		if (!(Version.Major == newVersion.Major && Version.Minor == newVersion.Minor && Version.Build == newVersion.Build) && !(asfUpdate || forced)) {
+			ASF.ArchiLogger.LogGenericInfo(string.Format(CultureInfo.CurrentCulture, "New {0} plugin version {1} is only compatible with latest ASF version", Name, newVersion));
+			return null;
+		}
+
+
+		if (Version >= newVersion & !forced) {
+			ASF.ArchiLogger.LogGenericInfo(string.Format(CultureInfo.CurrentCulture, Strings.PluginUpdateNotFound, Name, Version, newVersion));
+
+			return null;
+		}
+
+		if (releaseResponse.Assets.Count == 0) {
+			ASF.ArchiLogger.LogGenericWarning(string.Format(CultureInfo.CurrentCulture, Strings.PluginUpdateNoAssetFound, Name, Version, newVersion));
+
+			return null;
+		}
+
+		ReleaseAsset? asset = await ((IGitHubPluginUpdates) this).GetTargetReleaseAsset(asfVersion, asfVariant, newVersion, releaseResponse.Assets).ConfigureAwait(false);
+
+		if ((asset == null) || !releaseResponse.Assets.Contains(asset)) {
+			ASF.ArchiLogger.LogGenericWarning(string.Format(CultureInfo.CurrentCulture, Strings.PluginUpdateNoAssetFound, Name, Version, newVersion));
+
+			return null;
+		}
+
+		ASF.ArchiLogger.LogGenericInfo(string.Format(CultureInfo.CurrentCulture, Strings.PluginUpdateFound, Name, Version, newVersion));
+
+		return asset.DownloadURL;
 	}
+
 	public Task OnASFInit(IReadOnlyDictionary<string, JsonElement>? additionalConfigProperties = null) {
 		if (additionalConfigProperties == null) {
 			return Task.CompletedTask;
@@ -122,7 +147,7 @@ internal sealed class CommandAliasPlugin : IGitHubPluginUpdates, IBotCommand2, I
 	}
 
 	public Task OnLoaded() {
-		ASF.ArchiLogger.LogGenericInfo($"$\"{{Name}} by Rudokhvist");
+		ASF.ArchiLogger.LogGenericInfo($"{Name} by Rudokhvist. This plugin is cat-powered!");
 
 		return Task.CompletedTask;
 	}
