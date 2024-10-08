@@ -10,7 +10,7 @@ Read carefully this readme, and don't worry if you don't understand it from the 
 ## Installation
 
 Work of this plugin is only guaranteed with [generic ASF variant](https://github.com/JustArchiNET/ArchiSteamFarm/wiki/Setting-up#generic-setup), so if you use any other variant you are encouraged to switch to generic. Please don't report any issues if you are running some other variant, like `win-x64`, etc.
-After that, download `CommandAliasPlugin.zip` from [latest release page](https://github.com/Rudokhvist/CommandAliasPlugin/releases/latest), create new folder (called, for example, `CommandAliasPlugin`) inside of ASF's `plugins` folder, and unpack downloaded archive there.
+After that, download `CommandAliasPlugin.zip` from [latest release page](https://github.com/CatPoweredPlugins/CommandAliasPlugin/releases/latest), create new folder (called, for example, `CommandAliasPlugin`) inside of ASF's `plugins` folder, and unpack downloaded archive there.
 Now you have to configure aliases you want in `ASF.json` file in `config` folder of your ASF installation, as described below. If your ASF is configured to not restart after global config edits - restart it manually, and if you did everything right - your aliases should work now.
 
 
