@@ -99,7 +99,7 @@ internal sealed class CommandAliasPlugin : IGitHubPluginUpdates, IBotCommand2, I
 		}
 		if (args[0].Equals("COMMANDS", StringComparison.OrdinalIgnoreCase)) {
 		   HashSet<string> aliases = [.. Aliases.Where(alias => !string.IsNullOrEmpty(alias.AliasName)).Select(alias => alias.AliasName.ToUpperInvariant())];
-		   return "\n" + Name + "\n\n" + string.Join("\n", aliases) + "\n---------------------"
+		   return "\n" + Name + "\n\n" + string.Join("\n", aliases) + "\n---------------------";
 		}
 		List<Alias> foundAliases = [.. Aliases.Where(alias => !string.IsNullOrEmpty(alias.AliasName) && alias.AliasName.Equals(args[0], StringComparison.OrdinalIgnoreCase) && alias.ParamNumber <= (args.Length - 1)).OrderByDescending(alias => alias.ParamNumber)];
 
