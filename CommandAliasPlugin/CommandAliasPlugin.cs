@@ -11,8 +11,6 @@ using ArchiSteamFarm.Localization;
 using JetBrains.Annotations;
 using System.Globalization;
 using ArchiSteamFarm.Web.GitHub.Data;
-using System.Collections.ObjectModel;
-using System.Reflection;
 using ArchiSteamFarm.Web.GitHub;
 
 namespace CommandAliasPlugin;
@@ -24,14 +22,14 @@ internal sealed class CommandAliasPlugin : IGitHubPluginUpdates, IBotCommand2, I
 	public string RepositoryName => "CatPoweredPlugins/CommandAliasPlugin";
 	public Version Version => typeof(CommandAliasPlugin).Assembly.GetName().Version ?? throw new InvalidOperationException(nameof(Version));
 
-	internal static List<Alias>? Aliases;
+	private static List<Alias>? Aliases;
 
 	public async Task<Uri?> GetTargetReleaseURL(Version asfVersion, string asfVariant, bool asfUpdate, bool stable, bool forced) {
 		ArgumentNullException.ThrowIfNull(asfVersion);
 		ArgumentException.ThrowIfNullOrEmpty(asfVariant);
 
 		if (string.IsNullOrEmpty(RepositoryName)) {
-			ASF.ArchiLogger.LogGenericError(string.Format(CultureInfo.CurrentCulture, Strings.WarningFailedWithError, (nameof(RepositoryName))));
+			ASF.ArchiLogger.LogGenericError(string.Format(CultureInfo.CurrentCulture, Strings.WarningFailedWithError, nameof(RepositoryName)));
 
 			return null;
 		}
@@ -44,13 +42,13 @@ internal sealed class CommandAliasPlugin : IGitHubPluginUpdates, IBotCommand2, I
 
 		Version newVersion = new(releaseResponse.Tag);
 
-		if (!(Version.Major == newVersion.Major && Version.Minor == newVersion.Minor && Version.Build == newVersion.Build) && !(asfUpdate || forced)) {
+		if (!((Version.Major == newVersion.Major) && (Version.Minor == newVersion.Minor) && (Version.Build == newVersion.Build)) && !(asfUpdate || forced)) {
 			ASF.ArchiLogger.LogGenericInfo(string.Format(CultureInfo.CurrentCulture, "New {0} plugin version {1} is only compatible with latest ASF version", Name, newVersion));
+
 			return null;
 		}
 
-
-		if (Version >= newVersion & !forced) {
+		if ((Version >= newVersion) & !forced) {
 			ASF.ArchiLogger.LogGenericInfo(string.Format(CultureInfo.CurrentCulture, Strings.PluginUpdateNotFound, Name, Version, newVersion));
 
 			return null;
@@ -81,7 +79,7 @@ internal sealed class CommandAliasPlugin : IGitHubPluginUpdates, IBotCommand2, I
 		}
 
 		foreach (KeyValuePair<string, JsonElement> configProperty in additionalConfigProperties) {
-			if (configProperty.Key.Equals("Aliases", StringComparison.OrdinalIgnoreCase) && configProperty.Value.ValueKind == JsonValueKind.Array) {
+			if (configProperty.Key.Equals("Aliases", StringComparison.OrdinalIgnoreCase) && (configProperty.Value.ValueKind == JsonValueKind.Array)) {
 				try {
 					Aliases = configProperty.Value.ToJsonObject<List<Alias>>();
 					ASF.ArchiLogger.LogGenericInfo(string.Format(CultureInfo.CurrentCulture, Strings.PluginLoaded, "Aliases configuration"));
@@ -93,26 +91,31 @@ internal sealed class CommandAliasPlugin : IGitHubPluginUpdates, IBotCommand2, I
 
 		return Task.CompletedTask;
 	}
+
 	public async Task<string?> OnBotCommand(Bot bot, EAccess access, string message, string[] args, ulong steamID = 0) {
-		if (Aliases == null || Aliases.Count == 0) {
+		if ((Aliases == null) || (Aliases.Count == 0)) {
 			return null;
 		}
+
 		if (args[0].Equals("COMMANDS", StringComparison.OrdinalIgnoreCase)) {
-		   HashSet<string> aliases = [.. Aliases.Where(alias => !string.IsNullOrEmpty(alias?.AliasName)).Select(alias => alias.AliasName.ToUpperInvariant())];
-		   return "\n" + Name + "\n\n" + string.Join("\n", aliases) + "\n---------------------";
+			HashSet<string> aliases = [.. Aliases.Where(static alias => !string.IsNullOrEmpty(alias.AliasName)).Select(static alias => alias.AliasName!.ToUpperInvariant())];
+
+			return "\n" + Name + "\n\n" + string.Join("\n", aliases) + "\n---------------------";
 		}
-		List<Alias> foundAliases = [.. Aliases.Where(alias => !string.IsNullOrEmpty(alias.AliasName) && alias.AliasName.Equals(args[0], StringComparison.OrdinalIgnoreCase) && alias.ParamNumber <= (args.Length - 1)).OrderByDescending(alias => alias.ParamNumber)];
+
+		List<Alias> foundAliases = [.. Aliases.Where(alias => !string.IsNullOrEmpty(alias.AliasName) && alias.AliasName.Equals(args[0], StringComparison.OrdinalIgnoreCase) && (alias.ParamNumber <= args.Length - 1)).OrderByDescending(static alias => alias.ParamNumber)];
 
 		if (foundAliases.Count == 0) {
 			return null;
 		}
+
 		Alias alias = foundAliases[0];
 
-		if (args.Length > 1 && alias.ParamNumber == 0) {
+		if ((args.Length > 1) && (alias.ParamNumber == 0)) {
 			return null;
 		}
 
-		if (alias.Commands == null || alias.Commands.Length == 0) {
+		if ((alias.Commands == null) || (alias.Commands.Length == 0)) {
 			return null;
 		}
 
@@ -123,31 +126,34 @@ internal sealed class CommandAliasPlugin : IGitHubPluginUpdates, IBotCommand2, I
 		if (access < commandAccess) {
 			return null;
 		}
-		string result = "";
 
+		string result = "";
 
 		foreach (string commandFormat in alias.Commands) {
 			try {
 				string command = alias.ParamNumber > 0 ? string.Format(CultureInfo.CurrentCulture, commandFormat, [.. args[1..alias.ParamNumber], Utilities.GetArgsAsText(message, alias.ParamNumber)]) : commandFormat;
-				switch (command.Split(" ")[0].ToUpper(CultureInfo.CurrentCulture)) { //just in case of future increase of meta-commands
+
+				//just in case of future increase of meta-commands number
+				switch (command.Split(" ")[0].ToUpper(CultureInfo.CurrentCulture)) {
 					case "wait":
-						if (int.TryParse(command.Split(" ")?.ElementAt(1), out int waitmsec)) {
+						if (int.TryParse(command.Split(" ").ElementAt(1), out int waitmsec)) {
 							await Task.Delay(waitmsec).ConfigureAwait(false);
 						}
+
 						break;
 					default:
 						result += await bot.Commands.Response(EAccess.Owner, command, steamID).ConfigureAwait(false) + Environment.NewLine;
+
 						break;
 				}
 			} catch (Exception) {
 				ASF.ArchiLogger.LogGenericError(string.Format(CultureInfo.CurrentCulture, Strings.ErrorIsInvalid, "Alias configuration"));
+
 				return string.Format(CultureInfo.CurrentCulture, Strings.ErrorIsInvalid, "Alias configuration");
 			}
 		}
 
 		return alias.AllResponses ? result : Strings.Done;
-
-
 	}
 
 	public Task OnLoaded() {
